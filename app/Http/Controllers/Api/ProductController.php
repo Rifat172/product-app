@@ -12,9 +12,14 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $products = Product::all();
+        $products = Product::with('category')
+            ->when($request->category, function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->orderBy('id', 'asc')
+            ->paginate(15);
         return response()->json($products);
     }
 
