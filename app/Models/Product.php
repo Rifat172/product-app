@@ -21,4 +21,19 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function scopePriceFrom($query, $value)
+    {
+        return $query->where('price', '>=', $value);
+    }
+
+    public function scopePriceTo($query, $value)
+    {
+        return $query->where('price', '<=', $value);
+    }
+
+    public function scopeRatingFrom($query, $value)
+    {
+        return $query->where('rating', '>=', $value);
+    }
 }

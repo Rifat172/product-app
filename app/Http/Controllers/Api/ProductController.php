@@ -14,12 +14,61 @@ class ProductController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $products = Product::with('category')
-            ->when($request->category, function ($query, $categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->orderBy('id', 'asc')
-            ->paginate(15);
+        $query = Product::with('category');
+
+        if ($request->filled('q')) {
+            $query->whereFullText('name', $request->q);
+        }
+
+        if ($request->filled('price_from')) {
+            $query->where('price', '>=', $request->price_from);
+        }
+        if ($request->filled('price_to')) {
+            $query->where('price', '<=', $request->price_to);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('in_stock')) {
+            $query->where('in_stock', $request->boolean('in_stock'));
+        }
+
+        if ($request->filled('rating_from')) {
+            $query->where('rating', '>=', $request->rating_from);
+        }
+
+        $sort = $request->input('sort', 'newest');
+
+        $validSorts = ['price_asc', 'price_desc', 'rating_desc', 'newest', 'rating_asc'];
+
+        if (!in_array($sort, $validSorts)) {
+            $sort = 'newest';
+        }
+
+        switch ($sort) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'rating_desc':
+                $query->orderBy('rating', 'desc');
+                break;
+            case 'rating_asc':
+                $query->orderBy('rating', 'asc');
+                break;
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $products = $query
+            ->paginate(15)
+            ->appends($request->query());
+
         return response()->json($products);
     }
 
